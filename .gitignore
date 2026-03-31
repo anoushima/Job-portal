@@ -1,0 +1,14 @@
+# Django backend
+api/__pycache__/
+api/db.sqlite3
+api/venv/
+api/.env
+
+# React frontend
+ui/node_modules/
+ui/build/
+ui/.env
+
+# General
+.env
+*.log
