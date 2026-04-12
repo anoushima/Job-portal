@@ -1,15 +1,82 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from ..serializers.user_reg import RegisterSerializer
+from ..serializers.user_reg import RegisterSerializer,CompanySerializer,EmployerRegisterSerializer
+from ..models.user_reg import Company
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.views import APIView
 
+
+# jobseeker view
 @api_view(['POST'])
-def register(request):
-    serializer=RegisterSerializer(data=request.data)
+def register_jobseeker(request):
+    data = request.data.copy()
+    data['role'] = 'jobseeker'  
+
+    serializer = RegisterSerializer(data=data)
 
     if serializer.is_valid():
         serializer.save()
-        return Response({"message":"user registered successfully"},status=status.HTTP_201_CREATED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response({"message": "Jobseeker registered"}, status=201)
+
+    return Response(serializer.errors, status=400)
+
+
+class EmployerRegisterView(APIView):
+    """
+    POST /api/accounts/employer/register/
+    Public endpoint — no authentication required.
+    Creates a User + Company in a single atomic transaction.
+    """
+    permission_classes = [AllowAny]
+ 
+    def post(self, request):
+        serializer = EmployerRegisterSerializer(data=request.data)
+ 
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+ 
+        serializer.save()
+ 
+        return Response(
+            {"detail": "Employer account created successfully. Please log in."},
+            status=status.HTTP_201_CREATED,
+        )
+ 
+ 
+class CompanyProfileView(APIView):
+    """
+    GET  /api/accounts/company/
+    PUT  /api/accounts/company/
+    Protected — employer must be authenticated.
+    """
+    permission_classes = [IsAuthenticated]
+ 
+    def _get_company(self, user):
+        try:
+            return user.company
+        except Company.DoesNotExist:
+            return None
+ 
+    def get(self, request):
+        company = self._get_company(request.user)
+        if not company:
+            return Response(
+                {"detail": "No company profile found for this user."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(CompanySerializer(company).data)
+ 
+    def put(self, request):
+        company = self._get_company(request.user)
+        if not company:
+            return Response(
+                {"detail": "No company profile found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = CompanySerializer(company, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
