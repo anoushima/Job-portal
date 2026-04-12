@@ -29,12 +29,12 @@ class EmployerRegisterSerializer(serializers.Serializer):
     password=serializers.CharField(write_only=True,min_length=4)
     confirm_password=serializers.CharField(write_only=True)
 
-    # compnay details
-
+    # company details
     company_name=serializers.CharField(max_length=255)
     industry=serializers.CharField(max_length=50,required=False,allow_blank=True)
     company_size=serializers.CharField(max_length=20, required=False, allow_blank=True)
-    location=serializers.URLField(required=False,allow_blank=True)
+    location=serializers.CharField(max_length=255)  # Fix 3: was URLField, must be CharField
+    website=serializers.CharField(required=False,allow_blank=True)
     description=serializers.CharField(required=False,allow_blank=True)
 
     # validation
@@ -42,32 +42,33 @@ class EmployerRegisterSerializer(serializers.Serializer):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("An account with this email already exists")
         return value.lower()
-    
 
     def validate(self, attrs):
-        if attrs["password"]!=attrs["confirm password"]:
-            raise serializers.ValidationError({"confirm_password":"passwords do not match"})
-        validate_password(attrs[self.password])
+        # Fix 2: was attrs["confirm password"] (space) and attrs[self.password]
+        if attrs["password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match"})
+        validate_password(attrs["password"])
         return attrs
-    
+
     # create
     @transaction.atomic
     def save(self):
         data = self.validated_data
- 
+
         # Split full name into first/last
         name_parts = data["full_name"].strip().split(" ", 1)
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ""
- 
+
+        # Fix 4: removed username= (field doesn't exist), added role="employer"
         user = User.objects.create_user(
-            username=data["email"],   # use email as username
             email=data["email"],
             password=data["password"],
             first_name=first_name,
             last_name=last_name,
+            role="employer",
         )
- 
+
         Company.objects.create(
             user=user,
             name=data["company_name"],
@@ -77,7 +78,7 @@ class EmployerRegisterSerializer(serializers.Serializer):
             website=data.get("website", ""),
             description=data.get("description", ""),
         )
- 
+
         return user
  
  
@@ -94,6 +95,3 @@ class CompanySerializer(serializers.ModelSerializer):
             "description",
             "created_at",
         ]
- 
-
-        

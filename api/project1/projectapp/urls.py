@@ -4,7 +4,7 @@ from .views.user_reg import register_jobseeker,CompanyProfileView,EmployerRegist
 from .views.login import CustomTokenView
 from .views.jobs import CreateJob,Joblist,JobDetail,ApplyJob,EmployerApplications,TrackApplications,update_application_status,EmployerJobs,employer_shortlisted_count
 from .views.parse_resume import parse_resume
-
+from .views.profile import JobseekerProfileView, EmployerProfileView
 
 
 urlpatterns = [
@@ -21,9 +21,8 @@ urlpatterns = [
     path("applications/track/",TrackApplications.as_view(),name="track-applications"),
     path("applications/<int:pk>/",update_application_status),
     path("employer/jobs/",EmployerJobs.as_view()),
-    # path("employer/applications/count/",employer_application_count),
     path("employer/applications/shortlisted-count/",employer_shortlisted_count),
-    path("parse-resume/",parse_resume)
-    
-    
+    path("parse-resume/",parse_resume),
+    path("profile/jobseeker/", JobseekerProfileView.as_view(), name="jobseeker-profile"),
+    path("profile/employer/", EmployerProfileView.as_view(), name="employer-profile"),
 ]

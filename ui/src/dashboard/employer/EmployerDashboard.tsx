@@ -76,6 +76,7 @@ const fetchData=async()=>{
           </button>
 
           <button
+            onClick={() => navigate("/profile/employer")}
             className="block w-full text-left px-4 py-2 rounded hover:bg-gray-600"
           >
             Profile

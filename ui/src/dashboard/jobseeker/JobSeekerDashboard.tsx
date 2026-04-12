@@ -50,6 +50,7 @@ export default function JobSeekerDashboard() {
           </button>
 
           <button
+            onClick={() => navigate("/profile/jobseeker")}
             className="block w-full text-left px-4 py-2 rounded hover:bg-indigo-600"
           >
             Profile

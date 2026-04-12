@@ -17,7 +17,7 @@ const Login = () => {
       // ✅ send email instead of username
       const data = await loginUser(email, password);
 
-      localStorage.setItem("token", data.access);
+      localStorage.setItem("access", data.access);
       localStorage.setItem("refresh", data.refresh);
       localStorage.setItem("email", data.email);
       localStorage.setItem("role", data.role);

@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import Login from "./authentication/login"
 import JobSeekerRegister from "./authentication/JobseekerRegister"
@@ -16,6 +15,8 @@ import LandingPage from "./dashboard/landing_page/Landing_page"
 import ReviewApplications from "./dashboard/employer/ReviewApplications"
 import JobSeekerInfo from "./dashboard/landing_page/JobSeekerInfo"
 import EmployerInfo from "./dashboard/landing_page/EmployerInfo"
+import JobseekerProfile from "./dashboard/jobseeker/JobseekerProfile"
+import EmployerProfile from "./dashboard/employer/EmployerProfile"
 
 
 function App(){
@@ -43,6 +44,8 @@ function App(){
         <Route path="/employer/applications" element={<ProtectedRoute allowedRole="employer"><ReviewApplications /></ProtectedRoute>}/>
         <Route path="/jobseeker-info" element={<JobSeekerInfo />} />
         <Route path="/employer-info" element={<EmployerInfo />} />
+        <Route path="/profile/jobseeker" element={<ProtectedRoute allowedRole="jobseeker"><JobseekerProfile /></ProtectedRoute>} />
+        <Route path="/profile/employer" element={<ProtectedRoute allowedRole="employer"><EmployerProfile /></ProtectedRoute>} />
 
 
       </Routes>

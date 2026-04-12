@@ -25,7 +25,7 @@ export const registerEmployer = async (data: EmployerRegisterPayload) => {
   console.log("DATA:", data);
 
   try {
-    const response = await API.post("/register/employer/", data);
+    const response = await API.post("/employer/register/", data);
 
     console.log("🔥 SUCCESS RESPONSE:", response.data);
     return response.data;
@@ -93,5 +93,3 @@ export const registerCompany = async (data: any) => {
 
   return response.data;
 };
-
-
