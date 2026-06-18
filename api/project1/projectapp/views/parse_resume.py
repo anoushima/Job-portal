@@ -26,7 +26,7 @@ def parse_resume(request):
         print("EXTRACTED TEXT:", text[:500])
 
         # -----------------------------
-        # 🔥 BASIC FIELD EXTRACTION
+        # BASIC FIELD EXTRACTION
         # -----------------------------
 
         # 🔹 Email
@@ -79,14 +79,14 @@ def parse_resume(request):
             experience = "Has experience"
 
         # -----------------------------
-        # 🔥 RESPONSE
+        # RESPONSE
         # -----------------------------
         return Response({
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
             "phone": phone,
-            "skills": skills,  # 🔥 string (matches your model)
+            "skills": skills,  #  string (matches your model)
             "education": education,
             "experience": experience,
         })

@@ -7,7 +7,7 @@ interface ProtectedRouteProps{
 }
 
 const ProtectedRoute=({children,allowedRole}:ProtectedRouteProps)=>{
-    const token=localStorage.getItem("token");
+    const token=localStorage.getItem("access");
     const role=localStorage.getItem("role");
 
     if(!token || role !==allowedRole){
@@ -18,4 +18,3 @@ const ProtectedRoute=({children,allowedRole}:ProtectedRouteProps)=>{
 };
 
 export default ProtectedRoute
-

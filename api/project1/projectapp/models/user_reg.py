@@ -52,7 +52,7 @@ class User(AbstractUser):
     
 
 
-# 🏢 Company Model
+#  Company Model
 class Company(models.Model):
     INDUSTRY_CHOICES=[
         ("technology","Technology"),

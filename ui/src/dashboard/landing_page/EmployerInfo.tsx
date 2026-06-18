@@ -64,7 +64,7 @@ export default function EmployerInfo() {
         </motion.div>
       </section>
 
-      {/* 🔥 FEATURES */}
+      {/*  FEATURES */}
       <div className="bg-white py-16 px-6 space-y-20">
 
         {/* 🔹 Section 1 */}
@@ -99,7 +99,7 @@ export default function EmployerInfo() {
 
             <button
               onClick={() => navigate("/register")}
-              className="mt-4 px-6 py-3 bg-black text-white rounded-full"
+              className="mt-8 px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition"
             >
               Post a Job
             </button>
@@ -128,7 +128,7 @@ export default function EmployerInfo() {
 
             <button
               onClick={() => navigate("/dashboard")}
-              className="mt-4 px-6 py-3 bg-red-600 text-white rounded-full"
+              className="mt-8 px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition"
             >
               View Dashboard
             </button>
@@ -157,7 +157,7 @@ export default function EmployerInfo() {
 
             <button
               onClick={() => navigate("/register")}
-              className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-full"
+              className="mt-8 px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition"
             >
               Get Started
             </button>

@@ -46,7 +46,7 @@ export default function JobSeekerRegister() {
   e.preventDefault();
 
   try {
-    console.log("Sending data:", formData); // 🔍 see what you're sending
+    console.log("Sending data:", formData); //  see what you're sending
 
     await registerJobseeker(formData);
 
@@ -69,7 +69,7 @@ export default function JobSeekerRegister() {
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg px-8 py-10">
 
-        {/* 🔥 Title */}
+        {/*  Title */}
         <h2 className="text-2xl font-semibold text-gray-900">
           Create your account
         </h2>

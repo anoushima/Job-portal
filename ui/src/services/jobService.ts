@@ -22,7 +22,7 @@ export const getJobs = async (search = "") => {
 
   let url = "http://127.0.0.1:8000/api/jobs/list/";
 
-  // ✅ add search query param
+  //  add search query param
   if (search && search.length >= 3) {
     url += `?search=${search}`;
   }

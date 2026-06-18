@@ -1,26 +1,22 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import get_user_model, authenticate
+
+User = get_user_model()
 
 
 class CustomTokenSerializer(TokenObtainPairSerializer):
-    username_field = 'email'
+    username_field = User.USERNAME_FIELD  # picks up "email" from the model
 
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
-        # ✅ Add custom fields inside JWT
-        token['role'] = user.role
-        token['email'] = user.email
-
+        token["role"] = user.role
+        token["email"] = user.email
         return token
 
     def validate(self, attrs):
-        print(" CUSTOM TOKEN SERIALIZER RUNNING")  # ✅ debug
-
+        # attrs key matches username_field i.e. "email"
         data = super().validate(attrs)
-
-        # ✅ Add extra response data
-        data['role'] = self.user.role
-        data['email'] = self.user.email
-
+        data["role"] = self.user.role
+        data["email"] = self.user.email
         return data
