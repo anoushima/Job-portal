@@ -147,3 +147,18 @@ def employer_shortlisted_count(request):
     return Response({
         "shortlisted_count":count
     })
+
+# ── Public job list (no auth required) ──────────────────────────────────────
+class PublicJobList(generics.ListAPIView):
+    """Anyone can browse jobs; no token needed."""
+    serializer_class = JobSerializer
+    permission_classes = []          # AllowAny
+
+    def get_queryset(self):
+        search = self.request.query_params.get("search", "")
+        queryset = Job.objects.all().order_by("-created_at")
+        if search and len(search) >= 2:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(location__icontains=search)
+            )
+        return queryset

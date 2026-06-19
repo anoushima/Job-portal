@@ -9,7 +9,6 @@ import AdminDashboard from "./dashboard/admin/AdminDashboard"
 import CreateJob from "./dashboard/employer/Createjob"
 import JobsList from "./dashboard/jobseeker/JobsList"
 import JobDetails from "./dashboard/jobseeker/JobDetails"
-import ManageApplications from "./dashboard/employer/ManageApplications"
 import TrackApplications from "./dashboard/jobseeker/TrackApplications"
 import LandingPage from "./dashboard/landing_page/Landing_page"
 import ReviewApplications from "./dashboard/employer/ReviewApplications"
@@ -17,44 +16,38 @@ import JobSeekerInfo from "./dashboard/landing_page/JobSeekerInfo"
 import EmployerInfo from "./dashboard/landing_page/EmployerInfo"
 import JobseekerProfile from "./dashboard/jobseeker/JobseekerProfile"
 import EmployerProfile from "./dashboard/employer/EmployerProfile"
+import PublicJobs from "./dashboard/landing_page/PublicJobs"
 
-
-function App(){
+function App() {
   return (
-
-
-    <>
-
-     <BrowserRouter>
+    <BrowserRouter>
       <Routes>
-        
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login/>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<JobSeekerRegister />} />
         <Route path="/register-jobseeker" element={<JobSeekerRegister />} />
         <Route path="/register-employer" element={<EmployerRegister />} />
-        <Route path="/jobseeker-dashboard" element={<ProtectedRoute allowedRole="jobseeker"><JobSeekerDashboard/></ProtectedRoute>}></Route>
-        <Route path="/employer-dashboard" element={<ProtectedRoute allowedRole="employer"><EmployerDashboard/></ProtectedRoute>}></Route>
-        <Route path="/admin-dashboard" element={<ProtectedRoute allowedRole="admin"><AdminDashboard/></ProtectedRoute>}></Route>
-        <Route path="/create-job" element={<ProtectedRoute allowedRole="employer"><CreateJob/></ProtectedRoute>}></Route>
-        <Route path="/jobs" element={<ProtectedRoute allowedRole="jobseeker"><JobsList/></ProtectedRoute>}></Route>
-        <Route path="/jobs/:id" element={<JobDetails />} />
-        {/* <Route path="/employer/applications" element={<ProtectedRoute allowedRole="employer"><ManageApplications/></ProtectedRoute>}/> */}
-        <Route path="/my-applications"element={<ProtectedRoute allowedRole="jobseeker"><TrackApplications /></ProtectedRoute>}/>
-
-        <Route path="/employer/applications" element={<ProtectedRoute allowedRole="employer"><ReviewApplications /></ProtectedRoute>}/>
         <Route path="/jobseeker-info" element={<JobSeekerInfo />} />
         <Route path="/employer-info" element={<EmployerInfo />} />
+
+        {/* Public jobs browse — no login needed to view, login needed to apply */}
+        <Route path="/public-jobs" element={<PublicJobs />} />
+
+        {/* Protected routes */}
+        <Route path="/jobseeker-dashboard" element={<ProtectedRoute allowedRole="jobseeker"><JobSeekerDashboard /></ProtectedRoute>} />
+        <Route path="/employer-dashboard" element={<ProtectedRoute allowedRole="employer"><EmployerDashboard /></ProtectedRoute>} />
+        <Route path="/admin-dashboard" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/create-job" element={<ProtectedRoute allowedRole="employer"><CreateJob /></ProtectedRoute>} />
+        <Route path="/jobs" element={<ProtectedRoute allowedRole="jobseeker"><JobsList /></ProtectedRoute>} />
+        <Route path="/jobs/:id" element={<JobDetails />} />
+        <Route path="/my-applications" element={<ProtectedRoute allowedRole="jobseeker"><TrackApplications /></ProtectedRoute>} />
+        <Route path="/employer/applications" element={<ProtectedRoute allowedRole="employer"><ReviewApplications /></ProtectedRoute>} />
         <Route path="/profile/jobseeker" element={<ProtectedRoute allowedRole="jobseeker"><JobseekerProfile /></ProtectedRoute>} />
         <Route path="/profile/employer" element={<ProtectedRoute allowedRole="employer"><EmployerProfile /></ProtectedRoute>} />
-
-
       </Routes>
     </BrowserRouter>
-    </>
-   
   )
 }
-  
-
 
 export default App
