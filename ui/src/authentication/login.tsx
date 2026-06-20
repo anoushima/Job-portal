@@ -1,6 +1,22 @@
-import React, { useState } from "react";
+
+
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../services/authService";
+import { loginUser, googleSignIn } from "../services/authService";
+
+// ── Tell TypeScript about the GSI global ─────────────────────────────────
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (cfg: object) => void;
+          renderButton: (el: HTMLElement, cfg: object) => void;
+        };
+      };
+    };
+  }
+}
 
 const Login = () => {
   const navigate = useNavigate();
@@ -9,26 +25,24 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ── Role-based redirect ──────────────────────────────────────────────
+  const redirectByRole = useCallback(
+    (role: string) => {
+      if (role === "jobseeker") navigate("/jobseeker-dashboard");
+      else if (role === "employer") navigate("/employer-dashboard");
+      else navigate("/admin-dashboard");
+    },
+    [navigate]
+  );
+
+  // ── Email / password login ───────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       const data = await loginUser(email, password);
-
-      localStorage.setItem("access", data.access);
-      localStorage.setItem("refresh", data.refresh);
-      localStorage.setItem("email", data.email);
-      localStorage.setItem("role", data.role);
-
-      if (data.role === "jobseeker") {
-        navigate("/jobseeker-dashboard");
-      } else if (data.role === "employer") {
-        navigate("/employer-dashboard");
-      } else {
-        navigate("/admin-dashboard");
-      }
+      redirectByRole(data.role);
     } catch (err: any) {
       console.error("login failed:", err.response?.data);
       setError("Invalid Email or Password");
@@ -37,10 +51,63 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Google OAuth redirect — backend handles the OAuth flow
-    window.location.href = "http://127.0.0.1:8000/auth/google/login/";
-  };
+  // ── Google credential callback ───────────────────────────────────────
+  // Called by GSI after the user picks a Google account
+  const handleGoogleCredential = useCallback(
+    async (response: { credential: string }) => {
+      setError("");
+      setLoading(true);
+      try {
+        const data = await googleSignIn(response.credential);
+        redirectByRole(data.role);
+      } catch (err: any) {
+        console.error("Google sign-in failed:", err.response?.data);
+        setError("Google sign-in failed. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [redirectByRole]
+  );
+
+  // ── Load GSI script & render the Google button ───────────────────────
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    const initGSI = () => {
+      if (!window.google || !clientId) return;
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredential,
+      });
+
+      const btnEl = document.getElementById("google-btn");
+      if (btnEl) {
+        window.google.accounts.id.renderButton(btnEl, {
+          theme: "outline",
+          size: "large",
+          width: 400,
+          text: "continue_with",
+          shape: "rectangular",
+        });
+      }
+    };
+
+    if (window.google) {
+      initGSI();
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initGSI;
+      document.body.appendChild(script);
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [handleGoogleCredential]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -69,22 +136,13 @@ const Login = () => {
           {/* Header */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-            <p className="text-gray-500 text-sm mt-1">Sign in to your NextRole account</p>
+            <p className="text-gray-500 text-sm mt-1">
+              Sign in to your NextRole account
+            </p>
           </div>
 
-          {/* Google Sign In */}
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-xl py-3 px-4 mb-6 hover:bg-gray-50 transition font-medium text-sm text-gray-700"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
-              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-              <path fill="#FBBC05" d="M3.964 10.706c-.18-.54-.282-1.117-.282-1.706s.102-1.166.282-1.706V4.962H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.038l3.007-2.332z"/>
-              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.962L3.964 6.294C4.672 4.167 6.656 3.58 9 3.58z"/>
-            </svg>
-            Continue with Google
-          </button>
+          {/* Google Sign-In button — rendered by GSI into this div */}
+          <div id="google-btn" className="flex justify-center mb-6" />
 
           {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
@@ -93,7 +151,7 @@ const Login = () => {
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
-          {/* Form */}
+          {/* Email / Password form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="email"
