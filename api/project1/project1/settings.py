@@ -16,8 +16,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Set this in your .env file:
 #   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 # Get it from: https://console.cloud.google.com/ → APIs & Services → Credentials
-GOOGLE_CLIENT_ID = os.getenv("773968011839-6gdf0e7f0o7pf7bc2fipkd003hc9c4lc.apps.googleusercontent.com")
-
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 SECRET_KEY = 'django-insecure-hc!7_i0q7zfmhqt@2x(jh^)6s7=^%sqgssp)o-pw0ojfze+_es'
 
 DEBUG = True
