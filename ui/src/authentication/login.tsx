@@ -1,10 +1,7 @@
-
-
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser, googleSignIn } from "../services/authService";
 
-// ── Tell TypeScript about the GSI global ─────────────────────────────────
 declare global {
   interface Window {
     google?: {
@@ -24,8 +21,8 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
 
-  // ── Role-based redirect ──────────────────────────────────────────────
   const redirectByRole = useCallback(
     (role: string) => {
       if (role === "jobseeker") navigate("/jobseeker-dashboard");
@@ -35,7 +32,6 @@ const Login = () => {
     [navigate]
   );
 
-  // ── Email / password login ───────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -45,14 +41,12 @@ const Login = () => {
       redirectByRole(data.role);
     } catch (err: any) {
       console.error("login failed:", err.response?.data);
-      setError("Invalid Email or Password");
+      setError("Invalid email or password.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Google credential callback ───────────────────────────────────────
-  // Called by GSI after the user picks a Google account
   const handleGoogleCredential = useCallback(
     async (response: { credential: string }) => {
       setError("");
@@ -62,7 +56,9 @@ const Login = () => {
         redirectByRole(data.role);
       } catch (err: any) {
         console.error("Google sign-in failed:", err.response?.data);
-        setError("Google sign-in failed. Please try again.");
+        setError(
+          err.response?.data?.detail || "Google sign-in failed. Please try again."
+        );
       } finally {
         setLoading(false);
       }
@@ -70,31 +66,29 @@ const Login = () => {
     [redirectByRole]
   );
 
-  // ── Load GSI script & render the Google button ───────────────────────
-  useEffect(() => {
+  // ── FIX: use a ref + a stable initGSI so the button always renders
+  // even if the GSI script fires before or after the component mounts.
+  const initGSI = useCallback(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!window.google || !clientId || !googleBtnRef.current) return;
 
-    const initGSI = () => {
-      if (!window.google || !clientId) return;
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleCredential,
+    });
 
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleCredential,
-      });
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme: "outline",
+      size: "large",
+      width: 400,
+      text: "continue_with",
+      shape: "rectangular",
+    });
+  }, [handleGoogleCredential]);
 
-      const btnEl = document.getElementById("google-btn");
-      if (btnEl) {
-        window.google.accounts.id.renderButton(btnEl, {
-          theme: "outline",
-          size: "large",
-          width: 400,
-          text: "continue_with",
-          shape: "rectangular",
-        });
-      }
-    };
-
+  useEffect(() => {
     if (window.google) {
+      // Script already loaded (e.g. navigated back to this page)
       initGSI();
     } else {
       const script = document.createElement("script");
@@ -104,10 +98,13 @@ const Login = () => {
       script.onload = initGSI;
       document.body.appendChild(script);
       return () => {
-        document.body.removeChild(script);
+        // Clean up only if the script is still there (avoid error on fast nav)
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
       };
     }
-  }, [handleGoogleCredential]);
+  }, [initGSI]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -133,25 +130,20 @@ const Login = () => {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
 
-          {/* Header */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Sign in to your NextRole account
-            </p>
+            <p className="text-gray-500 text-sm mt-1">Sign in to your NextRole account</p>
           </div>
 
-          {/* Google Sign-In button — rendered by GSI into this div */}
-          <div id="google-btn" className="flex justify-center mb-6" />
+          {/* ── FIX: use ref instead of getElementById so it's always attached ── */}
+          <div ref={googleBtnRef} className="flex justify-center mb-6 min-h-[44px]" />
 
-          {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-gray-200" />
             <span className="text-gray-400 text-xs">or sign in with email</span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
-          {/* Email / Password form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="email"
@@ -161,7 +153,6 @@ const Login = () => {
               required
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
             />
-
             <input
               type="password"
               placeholder="Password"
@@ -171,9 +162,7 @@ const Login = () => {
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
             />
 
-            {error && (
-              <p className="text-red-500 text-sm text-center">{error}</p>
-            )}
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
             <button
               type="submit"
@@ -184,13 +173,9 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Footer */}
           <p className="text-center text-sm text-gray-500 mt-6">
             Don't have an account?{" "}
-            <Link
-              to="/register-jobseeker"
-              className="text-red-600 font-semibold hover:underline"
-            >
+            <Link to="/register-jobseeker" className="text-red-600 font-semibold hover:underline">
               Register here
             </Link>
           </p>

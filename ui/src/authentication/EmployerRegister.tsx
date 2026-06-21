@@ -21,8 +21,6 @@ export default function EmployerRegister() {
     full_name: "",
     email: "",
     password: "",
-    confirm_password: "",
-    terms: false,
   });
 
   const [errors, setErrors] = useState<any>({});
@@ -51,9 +49,6 @@ export default function EmployerRegister() {
     if (!credentials.full_name.trim()) newErrors.full_name = "Full name is required.";
     if (!credentials.email.includes("@")) newErrors.email = "Enter valid email.";
     if (credentials.password.length < 8) newErrors.password = "Min 8 characters.";
-    if (credentials.password !== credentials.confirm_password)
-      newErrors.confirm_password = "Passwords do not match.";
-    if (!credentials.terms) newErrors.terms = "Accept terms.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -64,16 +59,7 @@ export default function EmployerRegister() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    console.log( "FORM SUBMIT TRIGGERED");
     if (!validateStep2()) return;
-
-    console.log("SUBMIT DATA:", {
-  full_name: credentials.full_name,
-  email: credentials.email,
-  password: credentials.password,
-  confirm_password: credentials.confirm_password,
-  company_name: company.company_name,
-});
 
     setLoading(true);
     try {
@@ -81,7 +67,7 @@ export default function EmployerRegister() {
         full_name: credentials.full_name,
         email: credentials.email,
         password: credentials.password,
-        confirm_password: credentials.confirm_password,
+        confirm_password: credentials.password,
         company_name: company.company_name,
         industry: company.industry || "",
         company_size: company.company_size || "",
@@ -91,13 +77,12 @@ export default function EmployerRegister() {
       });
       navigate("/login");
     } catch (err: any) {
-  console.log("REGISTER ERROR:", err.response?.data || err.message);
-  setApiError(
-    err.response?.data?.detail ||
-    JSON.stringify(err.response?.data) ||
-    "Registration failed"
-  );
-} finally {
+      setApiError(
+        err.response?.data?.detail ||
+        JSON.stringify(err.response?.data) ||
+        "Registration failed"
+      );
+    } finally {
       setLoading(false);
     }
   };
@@ -116,8 +101,13 @@ export default function EmployerRegister() {
 
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <div className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white font-bold">
-            T
+          <div
+            className="cursor-pointer text-2xl font-extrabold tracking-wide"
+            onClick={() => navigate("/")}
+          >
+            <span className="text-black">Next</span>
+            <span className="text-red-600">Rol</span>
+            <span className="text-black">E</span>
           </div>
         </div>
 
@@ -173,17 +163,6 @@ export default function EmployerRegister() {
                 <input name="password" type="password" placeholder="Password"
                   value={credentials.password} onChange={handleCredentialsChange}
                   className={inputClass("password")} />
-
-                <input name="confirm_password" type="password" placeholder="Confirm password"
-                  value={credentials.confirm_password} onChange={handleCredentialsChange}
-                  className={inputClass("confirm_password")} />
-
-                <label className="flex gap-2 text-sm text-gray-600">
-                  <input type="checkbox" name="terms"
-                    checked={credentials.terms} onChange={handleCredentialsChange}
-                    className="accent-red-600" />
-                  Accept terms
-                </label>
               </div>
 
               {apiError && (

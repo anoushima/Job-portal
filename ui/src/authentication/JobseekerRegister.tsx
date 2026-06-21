@@ -181,6 +181,16 @@ export default function JobSeekerRegister() {
           </span>
         </p>
 
+        <p className="text-center text-sm text-gray-500 mt-3">
+          Hiring instead?{" "}
+          <span
+            onClick={() => navigate("/register-employer")}
+            className="text-red-600 cursor-pointer hover:underline font-medium"
+          >
+            Register as an Employer
+          </span>
+        </p>
+
       </div>
     </div>
   );
