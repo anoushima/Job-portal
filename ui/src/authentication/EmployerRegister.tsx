@@ -48,7 +48,7 @@ export default function EmployerRegister() {
     const newErrors: any = {};
     if (!credentials.full_name.trim()) newErrors.full_name = "Full name is required.";
     if (!credentials.email.includes("@")) newErrors.email = "Enter valid email.";
-    if (credentials.password.length < 8) newErrors.password = "Min 8 characters.";
+    if (credentials.password.length < 8) newErrors.password = "Min 8 characters. Avoid common passwords (e.g. use letters + numbers).";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -62,6 +62,7 @@ export default function EmployerRegister() {
     if (!validateStep2()) return;
 
     setLoading(true);
+    setApiError("");
     try {
       await registerEmployer({
         full_name: credentials.full_name,
@@ -77,11 +78,25 @@ export default function EmployerRegister() {
       });
       navigate("/login");
     } catch (err: any) {
-      setApiError(
-        err.response?.data?.detail ||
-        JSON.stringify(err.response?.data) ||
-        "Registration failed"
-      );
+      const data = err.response?.data;
+      if (data && typeof data === "object") {
+        if (data.detail) {
+          // e.g. { detail: "An account with this email already exists" }
+          setApiError(data.detail);
+        } else {
+          // DRF field-level errors: { password: ["too common"], email: ["already exists"] }
+          const messages = Object.entries(data)
+            .map(([field, msgs]) => {
+              const label = field.replace(/_/g, " ");
+              const text = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+              return `${label}: ${text}`;
+            })
+            .join(" | ");
+          setApiError(messages);
+        }
+      } else {
+        setApiError("Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -120,13 +135,19 @@ export default function EmployerRegister() {
               <p className="text-sm text-gray-500 mt-1 mb-6">Tell candidates who you are</p>
 
               <div className="space-y-4">
-                <input name="company_name" placeholder="Company name"
-                  value={company.company_name} onChange={handleCompanyChange}
-                  className={inputClass("company_name")} />
+                <div>
+                  <input name="company_name" placeholder="Company name"
+                    value={company.company_name} onChange={handleCompanyChange}
+                    className={inputClass("company_name")} />
+                  {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name}</p>}
+                </div>
 
-                <input name="location" placeholder="Location"
-                  value={company.location} onChange={handleCompanyChange}
-                  className={inputClass("location")} />
+                <div>
+                  <input name="location" placeholder="Location"
+                    value={company.location} onChange={handleCompanyChange}
+                    className={inputClass("location")} />
+                  {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+                </div>
 
                 <input name="website" placeholder="Website"
                   value={company.website} onChange={handleCompanyChange}
@@ -152,21 +173,30 @@ export default function EmployerRegister() {
               <h2 className="text-xl font-semibold text-black">Credentials</h2>
 
               <div className="space-y-4 mt-4">
-                <input name="full_name" placeholder="Full name"
-                  value={credentials.full_name} onChange={handleCredentialsChange}
-                  className={inputClass("full_name")} />
+                <div>
+                  <input name="full_name" placeholder="Full name"
+                    value={credentials.full_name} onChange={handleCredentialsChange}
+                    className={inputClass("full_name")} />
+                  {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name}</p>}
+                </div>
 
-                <input name="email" placeholder="Email"
-                  value={credentials.email} onChange={handleCredentialsChange}
-                  className={inputClass("email")} />
+                <div>
+                  <input name="email" placeholder="Email"
+                    value={credentials.email} onChange={handleCredentialsChange}
+                    className={inputClass("email")} />
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                </div>
 
-                <input name="password" type="password" placeholder="Password"
-                  value={credentials.password} onChange={handleCredentialsChange}
-                  className={inputClass("password")} />
+                <div>
+                  <input name="password" type="password" placeholder="Password"
+                    value={credentials.password} onChange={handleCredentialsChange}
+                    className={inputClass("password")} />
+                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                </div>
               </div>
 
               {apiError && (
-                <p className="text-red-500 text-sm mt-3">{apiError}</p>
+                <p className="text-red-500 text-sm mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{apiError}</p>
               )}
 
               <button
