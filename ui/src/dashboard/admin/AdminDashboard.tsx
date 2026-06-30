@@ -1,9 +1,14 @@
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import NotificationBell from "../../components/NotificationBell";
 import {
   LayoutDashboard, Users, Building2, Briefcase, ClipboardList,
-  BarChart2, Settings, LogOut, Bell, TrendingUp, TrendingDown,
+  BarChart2, Settings, LogOut, TrendingUp, TrendingDown,
   ArrowRight, Activity, ShieldCheck,
 } from "lucide-react";
+
+const API_URL = "http://127.0.0.1:8000/api";
 
 function AdminSidebar({ navigate, currentPath }: { navigate: any; currentPath: string }) {
   const links = [
@@ -50,31 +55,124 @@ function AdminSidebar({ navigate, currentPath }: { navigate: any; currentPath: s
   );
 }
 
-const stats = [
-  { title: "Total Users", value: "1,200", change: "+8%", up: true, icon: Users, color: "bg-blue-50 text-blue-600" },
-  { title: "Employers", value: "300", change: "+12%", up: true, icon: Building2, color: "bg-purple-50 text-purple-600" },
-  { title: "Active Jobs", value: "560", change: "+5%", up: true, icon: Briefcase, color: "bg-red-50 text-red-600" },
-  { title: "Applications", value: "2,100", change: "+18%", up: true, icon: ClipboardList, color: "bg-green-50 text-green-600" },
-];
+// ── Types ─────────────────────────────────────────────────────────────────
+interface StatItem {
+  value: number;
+  change: string;
+  up: boolean;
+}
 
-const recentActivity = [
-  { id: 1, type: "user", message: "New jobseeker registered: Arjun Menon", time: "2 min ago", icon: Users, color: "bg-blue-50 text-blue-600" },
-  { id: 2, type: "job", message: "New job posted: Frontend Engineer at Infosys", time: "14 min ago", icon: Briefcase, color: "bg-red-50 text-red-600" },
-  { id: 3, type: "application", message: "Priya Nair shortlisted for Data Analyst role", time: "1 hr ago", icon: ClipboardList, color: "bg-green-50 text-green-600" },
-  { id: 4, type: "employer", message: "New employer registered: TechCorp Solutions", time: "3 hr ago", icon: Building2, color: "bg-purple-50 text-purple-600" },
-  { id: 5, type: "user", message: "Account deactivated: inactive 90+ days", time: "5 hr ago", icon: ShieldCheck, color: "bg-amber-50 text-amber-600" },
-];
+interface AdminStats {
+  jobseekers: StatItem;
+  companies: StatItem;
+  jobs: StatItem;
+  applications: StatItem;
+}
+
+interface ActivityItem {
+  type: "user" | "job" | "application" | "employer";
+  message: string;
+  timestamp: string;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function timeAgo(isoString: string): string {
+  const diff = (Date.now() - new Date(isoString).getTime()) / 1000;
+  if (diff < 60) return `${Math.floor(diff)}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? "s" : ""} ago`;
+}
+
+function activityStyle(type: string) {
+  switch (type) {
+    case "user":        return { color: "bg-blue-50 text-blue-600",   Icon: Users };
+    case "job":         return { color: "bg-red-50 text-red-600",     Icon: Briefcase };
+    case "application": return { color: "bg-green-50 text-green-600", Icon: ClipboardList };
+    case "employer":    return { color: "bg-purple-50 text-purple-600", Icon: Building2 };
+    default:            return { color: "bg-gray-50 text-gray-600",   Icon: Activity };
+  }
+}
 
 const quickActions = [
-  { label: "Manage Users", desc: "View, activate or deactivate user accounts.", path: "/admin/users", icon: Users },
-  { label: "Job Listings", desc: "Review and moderate all job postings.", path: "/admin/jobs", icon: Briefcase },
-  { label: "Employer Accounts", desc: "Approve or suspend employer accounts.", path: "/admin/employers", icon: Building2 },
-  { label: "All Applications", desc: "Oversee the full application pipeline.", path: "/admin/applications", icon: ClipboardList },
+  { label: "Manage Users",      desc: "View, activate or deactivate user accounts.",  path: "/admin/users",        icon: Users },
+  { label: "Job Listings",      desc: "Review and moderate all job postings.",         path: "/admin/jobs",         icon: Briefcase },
+  { label: "Employer Accounts", desc: "Approve or suspend employer accounts.",         path: "/admin/employers",    icon: Building2 },
+  { label: "All Applications",  desc: "Oversee the full application pipeline.",        path: "/admin/applications", icon: ClipboardList },
 ];
 
+// ── Main component ─────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    axios
+      .get(`${API_URL}/admin/stats/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setStats(res.data.stats);
+        setActivity(res.data.recent_activity);
+      })
+      .catch((err) => {
+        if (err.response?.status === 401) {
+          navigate("/login");
+        } else {
+          setError("Failed to load dashboard data. Please try again.");
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [navigate]);
+
+  // stat cards config — maps API keys to display config
+  const statCards = stats
+    ? [
+        {
+          title: "Total Users",
+          value: stats.jobseekers.value.toLocaleString(),
+          change: stats.jobseekers.change,
+          up: stats.jobseekers.up,
+          icon: Users,
+          color: "bg-blue-50 text-blue-600",
+        },
+        {
+          title: "Companies",
+          value: stats.companies.value.toLocaleString(),
+          change: stats.companies.change,
+          up: stats.companies.up,
+          icon: Building2,
+          color: "bg-purple-50 text-purple-600",
+        },
+        {
+          title: "Active Jobs",
+          value: stats.jobs.value.toLocaleString(),
+          change: stats.jobs.change,
+          up: stats.jobs.up,
+          icon: Briefcase,
+          color: "bg-red-50 text-red-600",
+        },
+        {
+          title: "Applications",
+          value: stats.applications.value.toLocaleString(),
+          change: stats.applications.change,
+          up: stats.applications.up,
+          icon: ClipboardList,
+          color: "bg-green-50 text-green-600",
+        },
+      ]
+    : [];
 
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans">
@@ -88,10 +186,7 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-500">Platform overview and management tools.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition relative">
-              <Bell size={20} className="text-gray-600" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
+            <NotificationBell />
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-xl text-sm font-medium text-gray-700">
               <ShieldCheck size={15} className="text-red-600" />
               Admin
@@ -100,20 +195,35 @@ export default function AdminDashboard() {
         </header>
 
         <div className="flex-1 p-8 space-y-8">
+          {/* Error banner */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-3 text-sm">
+              {error}
+            </div>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-4 gap-5">
-            {stats.map(({ title, value, change, up, icon: Icon, color }) => (
-              <div key={title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2.5 rounded-xl ${color}`}><Icon size={20} /></div>
-                  <span className={`flex items-center gap-0.5 text-xs font-semibold ${up ? "text-green-600" : "text-red-600"}`}>
-                    {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}{change}
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{value}</p>
-                <p className="text-sm text-gray-500 mt-0.5">{title}</p>
-              </div>
-            ))}
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 animate-pulse">
+                    <div className="h-10 w-10 rounded-xl bg-gray-100 mb-4" />
+                    <div className="h-7 w-20 bg-gray-100 rounded mb-2" />
+                    <div className="h-4 w-24 bg-gray-100 rounded" />
+                  </div>
+                ))
+              : statCards.map(({ title, value, change, up, icon: Icon, color }) => (
+                  <div key={title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`p-2.5 rounded-xl ${color}`}><Icon size={20} /></div>
+                      <span className={`flex items-center gap-0.5 text-xs font-semibold ${up ? "text-green-600" : "text-red-600"}`}>
+                        {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}{change}
+                      </span>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{value}</p>
+                    <p className="text-sm text-gray-500 mt-0.5">{title}</p>
+                  </div>
+                ))}
           </div>
 
           <div className="grid grid-cols-3 gap-6">
@@ -172,17 +282,34 @@ export default function AdminDashboard() {
             <div>
               <h2 className="text-base font-bold text-gray-900 mb-4">Recent Activity</h2>
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-                {recentActivity.map(({ id, message, time, icon: Icon, color }) => (
-                  <div key={id} className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg shrink-0 ${color}`}>
-                      <Icon size={14} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-700 leading-snug">{message}</p>
-                      <p className="text-xs text-gray-400 mt-1">{time}</p>
-                    </div>
-                  </div>
-                ))}
+                {loading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-start gap-3 animate-pulse">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 bg-gray-100 rounded w-full" />
+                          <div className="h-3 bg-gray-100 rounded w-2/3" />
+                        </div>
+                      </div>
+                    ))
+                  : activity.length === 0
+                  ? (
+                      <p className="text-sm text-gray-400 text-center py-4">No recent activity yet.</p>
+                    )
+                  : activity.map((item, idx) => {
+                      const { color, Icon } = activityStyle(item.type);
+                      return (
+                        <div key={idx} className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg shrink-0 ${color}`}>
+                            <Icon size={14} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-700 leading-snug">{item.message}</p>
+                            <p className="text-xs text-gray-400 mt-1">{timeAgo(item.timestamp)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                 <button className="w-full text-center text-xs text-red-600 font-medium hover:underline pt-1">
                   View all activity
                 </button>

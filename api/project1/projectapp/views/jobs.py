@@ -13,6 +13,7 @@ from django.db.models import Subquery,Q
 from ..models.jobs import Job,Application
 from ..serializers.jobs import JobSerializer
 from ..serializers.application import ApplicationSerializer
+from ..notifications import notify
 
 
 @method_decorator(csrf_exempt,name='dispatch')
@@ -29,6 +30,19 @@ class CreateJob(generics.CreateAPIView):
 
 
 class Joblist(generics.ListAPIView):
+    """
+    Jobseeker's job list.
+
+    Behavior:
+    - If the jobseeker has filled in their `skills` field, jobs whose
+      title/description/location mention any of those skills are
+      returned first (as "matches"); everything else still shows up
+      below them so nothing is hidden from the jobseeker.
+    - If the jobseeker has NOT set any skills yet, all jobs are
+      returned in normal recency order (no filtering at all).
+    - A `match` boolean field is added to each job in the response so
+      the frontend can label "Matches your skills" vs other jobs.
+    """
     serializer_class=JobSerializer
     permission_classes=[IsAuthenticated]
 
@@ -44,11 +58,39 @@ class Joblist(generics.ListAPIView):
         # search
         if search and len(search)>=3:
             queryset=queryset.filter(
-                Q(title_icontains=search)|
-                Q(loation_icontains=search)|
-                Q(loation_icontains=search)
+                Q(title__icontains=search)|
+                Q(location__icontains=search)
             )
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        raw_skills = (request.user.skills or "").strip()
+        skill_terms = [s.strip() for s in raw_skills.split(",") if s.strip()] if raw_skills else []
+
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+
+        if not skill_terms:
+            # No skills set yet → return everything as-is, no matching applied.
+            for item in data:
+                item["match"] = False
+            return Response(data)
+
+        # Skills are set → tag matches and sort them to the top,
+        # but still include non-matching jobs ("explore jobs") below.
+        skill_terms_lower = [t.lower() for t in skill_terms]
+
+        def is_match(job):
+            haystack = f"{job.get('title','')} {job.get('description','')} {job.get('location','')}".lower()
+            return any(term in haystack for term in skill_terms_lower)
+
+        for item in data:
+            item["match"] = is_match(item)
+
+        data.sort(key=lambda item: item["match"], reverse=True)
+        return Response(data)
 
 
 class JobDetail(generics.RetrieveAPIView):
@@ -69,6 +111,16 @@ class ApplyJob(APIView):
                 {"message":"already applied"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Notify the employer who owns this job
+        applicant_name = request.user.get_full_name() or request.user.email
+        notify(
+            recipient=job.employer,
+            notif_type="new_applicant",
+            message=f"{applicant_name} applied for {job.title}",
+            link="/employer/applications",
+        )
+
         return Response({"message":"Application submitted"})
     
 
@@ -120,6 +172,20 @@ def update_application_status(request, pk):
 
     application.status = new_status
     application.save()
+
+    # Notify the jobseeker that their application status changed
+    status_labels = {
+        "viewed": "viewed",
+        "shortlisted": "shortlisted",
+        "rejected": "rejected",
+    }
+    label = status_labels.get(new_status, new_status)
+    notify(
+        recipient=application.user,
+        notif_type="application_update",
+        message=f"Your application for {application.job.title} was {label}",
+        link="/my-applications",
+    )
 
     return Response({"message": "status updated"})
 

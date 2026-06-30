@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getJobs } from "../../services/jobService";
+import NotificationBell from "../../components/NotificationBell";
 import {
   Briefcase,
   ClipboardList,
@@ -13,7 +14,6 @@ import {
   DollarSign,
   ArrowRight,
   ChevronRight,
-  Bell,
 } from "lucide-react";
 
 function Sidebar({ navigate, currentPath }: { navigate: any; currentPath: string }) {
@@ -112,9 +112,7 @@ export default function JobSeekerDashboard() {
             <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-sm text-gray-500">Welcome back — here's what's happening today.</p>
           </div>
-          <button className="relative p-2 rounded-lg hover:bg-gray-100 transition">
-            <Bell size={20} className="text-gray-600" />
-          </button>
+          <NotificationBell />
         </header>
 
         <div className="flex-1 p-8 space-y-8">
@@ -214,6 +212,9 @@ export default function JobSeekerDashboard() {
                       </div>
                       {job.applied && (
                         <span className="text-xs font-medium px-2 py-1 bg-green-50 text-green-700 rounded-full">Applied</span>
+                      )}
+                      {!job.applied && job.match && (
+                        <span className="text-xs font-medium px-2 py-1 bg-red-50 text-red-700 rounded-full">Matches your skills</span>
                       )}
                     </div>
                     <h3 className="font-semibold text-gray-900 text-sm leading-snug">{job.title}</h3>

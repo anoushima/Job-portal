@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getJobs } from "../../services/jobService";
 import type { Job } from "../../types/jobType";
+import NotificationBell from "../../components/NotificationBell";
 import {
-  LayoutDashboard, Search, ClipboardList, User, LogOut, Bell,
-  MapPin, DollarSign, ArrowRight, SlidersHorizontal, Briefcase,
+  LayoutDashboard, Search, ClipboardList, User, LogOut,
+  MapPin, DollarSign, ArrowRight, SlidersHorizontal, Briefcase, Sparkles,
 } from "lucide-react";
 
 function Sidebar({ navigate, currentPath }: { navigate: any; currentPath: string }) {
@@ -74,6 +75,8 @@ export default function JobsList() {
     ? jobs.filter((job) => job.title.toLowerCase().includes(search.toLowerCase()))
     : jobs;
 
+  const matchedCount = jobs.filter((job: any) => job.match).length;
+
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans">
       <Sidebar navigate={navigate} currentPath={location.pathname} />
@@ -86,9 +89,7 @@ export default function JobsList() {
               {jobs.length} openings available — find your next opportunity.
             </p>
           </div>
-          <button className="relative p-2 rounded-lg hover:bg-gray-100 transition">
-            <Bell size={20} className="text-gray-600" />
-          </button>
+          <NotificationBell />
         </header>
 
         <div className="flex-1 p-8 space-y-6">
@@ -113,6 +114,13 @@ export default function JobsList() {
           {search.length >= 2 && (
             <p className="text-sm text-gray-500">
               {filteredJobs.length} result{filteredJobs.length !== 1 ? "s" : ""} for &ldquo;{search}&rdquo;
+            </p>
+          )}
+
+          {!loading && search.length < 2 && matchedCount > 0 && (
+            <p className="text-sm text-gray-500 flex items-center gap-1.5">
+              <Sparkles size={14} className="text-red-500" />
+              {matchedCount} job{matchedCount !== 1 ? "s" : ""} match your skills — shown first below.
             </p>
           )}
 
@@ -149,6 +157,11 @@ export default function JobsList() {
                     {job.applied && (
                       <span className="text-xs font-semibold px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full">
                         ✓ Applied
+                      </span>
+                    )}
+                    {!job.applied && job.match && (
+                      <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded-full">
+                        <Sparkles size={11} /> Match
                       </span>
                     )}
                   </div>

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getApplicationCount, getEmployerJobs, getShortlistedCount } from "../../services/jobService";
+import NotificationBell from "../../components/NotificationBell";
 import {
   LayoutDashboard, PlusCircle, ClipboardList, User, LogOut,
-  Bell, Briefcase, Users, CheckCircle, ArrowRight, TrendingUp,
+  Briefcase, Users, CheckCircle, ArrowRight, TrendingUp,
   MapPin, DollarSign, ChevronRight, Eye,
 } from "lucide-react";
 
@@ -94,9 +95,7 @@ export default function EmployerDashboard() {
             <p className="text-sm text-gray-500">Manage your job listings and review applicants.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition">
-              <Bell size={20} className="text-gray-600" />
-            </button>
+            <NotificationBell />
             <button
               onClick={() => navigate("/create-job")}
               className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition"

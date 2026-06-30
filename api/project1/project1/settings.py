@@ -31,10 +31,29 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'rest_framework',
     'corsheaders',
     'projectapp',
 ]
+
+ASGI_APPLICATION = 'project1.asgi.application'
+
+# In-memory channel layer — simplest option for local dev, no Redis needed.
+# NOTE: only works within a single process. If you run Daphne/Uvicorn with
+# multiple workers, or deploy to production, switch to channels_redis:
+#   pip install channels_redis
+#   CHANNEL_LAYERS = {
+#       "default": {
+#           "BACKEND": "channels_redis.core.RedisChannelLayer",
+#           "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+#       }
+#   }
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}
 
 AUTH_USER_MODEL = 'projectapp.User'
 

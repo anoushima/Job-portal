@@ -2,7 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from ..serializers.user_reg import RegisterSerializer,CompanySerializer,EmployerRegisterSerializer
-from ..models.user_reg import Company
+from ..models.user_reg import Company, User
+from ..notifications import notify, notify_many
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.views import APIView
@@ -37,7 +38,17 @@ class EmployerRegisterView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
  
-        serializer.save()
+        user = serializer.save()
+
+        # Notify every admin so they can review/approve the new company.
+        admins = User.objects.filter(role="admin")
+        company_name = getattr(getattr(user, "company", None), "name", user.email)
+        notify_many(
+            recipients=admins,
+            notif_type="company_registered",
+            message=f"New company registered: {company_name} — pending review",
+            link="/admin/employers",
+        )
  
         return Response(
             {"detail": "Employer account created successfully. Please log in."},

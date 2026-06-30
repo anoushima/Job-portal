@@ -12,6 +12,10 @@ from .views.jobs import (
 from .views.parse_resume import parse_resume
 from .views.profile import JobseekerProfileView, EmployerProfileView
 from .views.google_auth import GoogleSignInView   # ← NEW
+from .views.admin_stats import admin_stats
+from .views.notifications import (
+    NotificationListView, mark_notification_read, mark_all_notifications_read,
+)
 
 
 urlpatterns = [
@@ -43,6 +47,14 @@ urlpatterns = [
     path('employer/applications/shortlisted-count/', employer_shortlisted_count),
     path('employer/applications/count/', EmployerApplications.as_view()),
     path('employer/jobs/', EmployerJobs.as_view()),
+
+    # ── Admin ──────────────────────────────────────────────────────────────
+    path('admin/stats/', admin_stats, name='admin-stats'),
+
+    # ── Notifications ──────────────────────────────────────────────────────
+    path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('notifications/<int:pk>/read/', mark_notification_read, name='notification-read'),
+    path('notifications/read-all/', mark_all_notifications_read, name='notification-read-all'),
 
     # ── Misc ───────────────────────────────────────────────────────────────
     path('parse-resume/', parse_resume),
