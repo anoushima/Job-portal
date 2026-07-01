@@ -8,6 +8,7 @@ class Notification(models.Model):
         ("job_match", "Job Match"),                       # → jobseeker: new job matching skills
         ("new_applicant", "New Applicant"),                # → employer: someone applied
         ("company_registered", "Company Registered"),      # → admin: new company signed up
+        ("job_reported", "Job Reported"), 
     ]
 
     recipient = models.ForeignKey(

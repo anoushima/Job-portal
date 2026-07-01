@@ -51,7 +51,7 @@ class Joblist(generics.ListAPIView):
         applied_jobs=Application.objects.filter(
             user=self.request.user
         ).values("job_id")
-        queryset=Job.objects.exclude(
+        queryset=Job.objects.filter(is_active=True).exclude(
             id__in=Subquery(applied_jobs)
         ).order_by("-created_at")
 
@@ -214,6 +214,31 @@ def employer_shortlisted_count(request):
         "shortlisted_count":count
     })
 
+# ── Withdraw / undo a mistaken application ──────────────────────────────────
+class WithdrawApplication(APIView):
+    """
+    DELETE /api/applications/<pk>/withdraw/
+    Lets a jobseeker undo an application they made by mistake.
+    Only the applicant who owns the application can withdraw it, and only
+    their own row — this is intentionally NOT restricted by status, since
+    "applied by mistake" can happen the instant after clicking Apply, before
+    an employer has reacted at all.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            application = Application.objects.get(pk=pk, user=request.user)
+        except Application.DoesNotExist:
+            return Response(
+                {"error": "Application not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        application.delete()
+        return Response({"message": "Application withdrawn"}, status=status.HTTP_200_OK)
+
+
 # ── Public job list (no auth required) ──────────────────────────────────────
 class PublicJobList(generics.ListAPIView):
     """Anyone can browse jobs; no token needed."""
@@ -222,7 +247,7 @@ class PublicJobList(generics.ListAPIView):
 
     def get_queryset(self):
         search = self.request.query_params.get("search", "")
-        queryset = Job.objects.all().order_by("-created_at")
+        queryset = Job.objects.filter(is_active=True).order_by("-created_at")
         if search and len(search) >= 2:
             queryset = queryset.filter(
                 Q(title__icontains=search) | Q(location__icontains=search)

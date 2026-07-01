@@ -162,16 +162,22 @@ export default function ReviewApplications() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
                           <h3 className="font-semibold text-gray-900 text-sm">
-                            {app.user?.username || app.applicant || "Unknown Applicant"}
+                            {app.applicant_name || app.applicant || app.user?.username || "Unknown Applicant"}
                           </h3>
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${st.bg} ${st.text} ${st.border}`}>
                             {st.label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 mt-1.5">
+                        <div className="flex items-center gap-4 mt-1.5 flex-wrap">
                           <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Briefcase size={11} /> {app.job?.title || app.job_title || "Unknown Job"}
                           </span>
+                          {app.applicant_email && (
+                            <span className="text-xs text-gray-500">{app.applicant_email}</span>
+                          )}
+                          {app.applicant_phone && (
+                            <span className="text-xs text-gray-500">{app.applicant_phone}</span>
+                          )}
                           {app.applied_at && (
                             <span className="text-xs text-gray-400 flex items-center gap-1">
                               <Calendar size={11} />

@@ -6,7 +6,7 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model=Job
         fields="__all__"
-        read_only_fields=["employer"]
+        read_only_fields=["employer","is_active"]
 
     def get_applied(self,obj):
         request=self.context.get("request")

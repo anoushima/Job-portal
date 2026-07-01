@@ -17,6 +17,12 @@ import EmployerInfo from "./dashboard/landing_page/EmployerInfo"
 import JobseekerProfile from "./dashboard/jobseeker/JobseekerProfile"
 import EmployerProfile from "./dashboard/employer/EmployerProfile"
 import PublicJobs from "./dashboard/landing_page/PublicJobs"
+import AdminUsers from "./dashboard/admin/AdminUsers"
+import AdminEmployers from "./dashboard/admin/AdminEmployers"
+import AdminJobs from "./dashboard/admin/AdminJobs"
+import AdminApplications from "./dashboard/admin/AdminApplications"
+import AdminReports from "./dashboard/admin/AdminReports"
+import AdminSettings from "./dashboard/admin/AdminSettings"
 
 function App() {
   return (
@@ -38,6 +44,12 @@ function App() {
         <Route path="/jobseeker-dashboard" element={<ProtectedRoute allowedRole="jobseeker"><JobSeekerDashboard /></ProtectedRoute>} />
         <Route path="/employer-dashboard" element={<ProtectedRoute allowedRole="employer"><EmployerDashboard /></ProtectedRoute>} />
         <Route path="/admin-dashboard" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute allowedRole="admin"><AdminUsers /></ProtectedRoute>} />
+        <Route path="/admin/employers" element={<ProtectedRoute allowedRole="admin"><AdminEmployers /></ProtectedRoute>} />
+        <Route path="/admin/jobs" element={<ProtectedRoute allowedRole="admin"><AdminJobs /></ProtectedRoute>} />
+        <Route path="/admin/applications" element={<ProtectedRoute allowedRole="admin"><AdminApplications /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute allowedRole="admin"><AdminReports /></ProtectedRoute>} />
+        <Route path="/admin/settings" element={<ProtectedRoute allowedRole="admin"><AdminSettings /></ProtectedRoute>} />
         <Route path="/create-job" element={<ProtectedRoute allowedRole="employer"><CreateJob /></ProtectedRoute>} />
         <Route path="/jobs" element={<ProtectedRoute allowedRole="jobseeker"><JobsList /></ProtectedRoute>} />
         <Route path="/jobs/:id" element={<JobDetails />} />

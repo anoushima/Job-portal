@@ -162,3 +162,36 @@ export const getShortlistedCount=async()=>{
   );
   return response.data
 }
+
+// Jobseeker - report a job as spam/fraud/etc.
+export const reportJob = async (jobId: number, reason: string, description: string) => {
+  const token = localStorage.getItem("access");
+
+  const response = await axios.post(
+    `${API_URL}${jobId}/report/`,
+    { reason, description },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+};
+
+// Jobseeker - undo/withdraw an application made by mistake
+export const withdrawApplication = async (applicationId: number) => {
+  const token = localStorage.getItem("access");
+
+  const response = await axios.delete(
+    `http://127.0.0.1:8000/api/applications/${applicationId}/withdraw/`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+};

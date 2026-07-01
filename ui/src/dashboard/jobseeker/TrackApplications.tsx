@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { trackApplications } from "../../services/jobService";
+import { trackApplications, withdrawApplication } from "../../services/jobService";
 import {
   ClipboardList, Search, User, LogOut, LayoutDashboard,
   Briefcase, MapPin, Calendar, ChevronRight, Bell,
-  Clock, Eye, CheckCircle, XCircle, AlertCircle,
+  Clock, Eye, CheckCircle, XCircle, AlertCircle, Undo2,
 } from "lucide-react";
 
 function Sidebar({ navigate, currentPath }: { navigate: any; currentPath: string }) {
@@ -98,6 +98,8 @@ export default function TrackApplications() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -112,6 +114,19 @@ export default function TrackApplications() {
     };
     fetchApplications();
   }, []);
+
+  const handleWithdraw = async (id: number) => {
+    setWithdrawingId(id);
+    try {
+      await withdrawApplication(id);
+      setApplications((prev) => prev.filter((a) => a.id !== id));
+    } catch (error) {
+      console.error("error withdrawing application", error);
+    } finally {
+      setWithdrawingId(null);
+      setConfirmingId(null);
+    }
+  };
 
   const statusCounts = {
     all: applications.length,
@@ -286,6 +301,36 @@ export default function TrackApplications() {
                               <span key={lbl} className="text-xs text-gray-400">{lbl}</span>
                             ))}
                           </div>
+                        </div>
+
+                        {/* Undo / withdraw — lets a jobseeker fix an accidental application */}
+                        <div className="mt-4 pt-3 border-t border-gray-50">
+                          {confirmingId === app.id ? (
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="text-xs text-gray-500">Withdraw this application?</span>
+                              <button
+                                onClick={() => handleWithdraw(app.id)}
+                                disabled={withdrawingId === app.id}
+                                className="text-xs font-semibold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition disabled:opacity-60"
+                              >
+                                {withdrawingId === app.id ? "Withdrawing…" : "Yes, withdraw"}
+                              </button>
+                              <button
+                                onClick={() => setConfirmingId(null)}
+                                disabled={withdrawingId === app.id}
+                                className="text-xs font-medium text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg transition"
+                              >
+                                Keep it
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmingId(app.id)}
+                              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-red-600 transition"
+                            >
+                              <Undo2 size={13} /> Applied by mistake? Undo
+                            </button>
+                          )}
                         </div>
                       </div>
 

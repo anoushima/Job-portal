@@ -7,7 +7,7 @@ from .views.login import CustomTokenView
 from .views.jobs import (
     CreateJob, Joblist, JobDetail, ApplyJob,
     EmployerApplications, TrackApplications, update_application_status,
-    EmployerJobs, employer_shortlisted_count, PublicJobList,
+    EmployerJobs, employer_shortlisted_count, PublicJobList, WithdrawApplication,
 )
 from .views.parse_resume import parse_resume
 from .views.profile import JobseekerProfileView, EmployerProfileView
@@ -15,6 +15,11 @@ from .views.google_auth import GoogleSignInView   # ← NEW
 from .views.admin_stats import admin_stats
 from .views.notifications import (
     NotificationListView, mark_notification_read, mark_all_notifications_read,
+)
+from .views.job_report import ReportJobView, AdminReportsListView, update_report_status
+from .views.admin_management import (
+    AdminUsersListView, AdminEmployersListView, AdminJobsListView,
+    AdminApplicationsListView, toggle_user_active, toggle_job_active,
 )
 
 
@@ -44,12 +49,24 @@ urlpatterns = [
     path('employer/applications/', EmployerApplications.as_view(), name='employer-applications'),
     path('applications/track/', TrackApplications.as_view(), name='track-applications'),
     path('applications/<int:pk>/', update_application_status),
+    path('applications/<int:pk>/withdraw/', WithdrawApplication.as_view(), name='withdraw-application'),
     path('employer/applications/shortlisted-count/', employer_shortlisted_count),
     path('employer/applications/count/', EmployerApplications.as_view()),
     path('employer/jobs/', EmployerJobs.as_view()),
 
+    # ── Job reports (jobseeker reports spam/fraud, admin reviews) ───────────
+    path('jobs/<int:pk>/report/', ReportJobView.as_view(), name='report-job'),
+    path('admin/reports/', AdminReportsListView.as_view(), name='admin-reports'),
+    path('admin/reports/<int:pk>/', update_report_status, name='admin-report-update'),
+
     # ── Admin ──────────────────────────────────────────────────────────────
     path('admin/stats/', admin_stats, name='admin-stats'),
+    path('admin/users/', AdminUsersListView.as_view(), name='admin-users'),
+    path('admin/users/<int:pk>/toggle-active/', toggle_user_active, name='admin-user-toggle'),
+    path('admin/employers/', AdminEmployersListView.as_view(), name='admin-employers'),
+    path('admin/jobs/', AdminJobsListView.as_view(), name='admin-jobs'),
+    path('admin/jobs/<int:pk>/toggle-active/', toggle_job_active, name='admin-job-toggle'),
+    path('admin/applications/', AdminApplicationsListView.as_view(), name='admin-applications'),
 
     # ── Notifications ──────────────────────────────────────────────────────
     path('notifications/', NotificationListView.as_view(), name='notification-list'),

@@ -10,7 +10,7 @@ import {
 
 const API_URL = "http://127.0.0.1:8000/api";
 
-function AdminSidebar({ navigate, currentPath }: { navigate: any; currentPath: string }) {
+export function AdminSidebar({ navigate, currentPath }: { navigate: any; currentPath: string }) {
   const links = [
     { label: "Dashboard", path: "/admin-dashboard", icon: LayoutDashboard },
     { label: "Users", path: "/admin/users", icon: Users },

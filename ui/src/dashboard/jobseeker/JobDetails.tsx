@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getJobById, applyJob } from "../../services/jobService";
+import { getJobById, applyJob, reportJob } from "../../services/jobService";
 import type { Job } from "../../types/jobType";
 import {
   MapPin, DollarSign, Briefcase, ArrowLeft, Send, CheckCircle,
-  Building2, Clock, ChevronRight,
+  Building2, Clock, ChevronRight, Flag, X,
 } from "lucide-react";
+
+const REPORT_REASONS = [
+  { value: "spam", label: "Spam or misleading" },
+  { value: "fraud", label: "Looks fraudulent / scam" },
+  { value: "offensive", label: "Offensive content" },
+  { value: "expired", label: "Job no longer exists" },
+  { value: "other", label: "Other" },
+];
 
 export default function JobDetails() {
   const { id } = useParams();
@@ -14,6 +22,13 @@ export default function JobDetails() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [justApplied, setJustApplied] = useState(false);
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("spam");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [reportError, setReportError] = useState("");
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -43,6 +58,26 @@ export default function JobDetails() {
       console.error(error);
     } finally {
       setApplying(false);
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!job) return;
+    setReportSubmitting(true);
+    setReportError("");
+    try {
+      await reportJob(job.id, reportReason, reportDescription);
+      setReportSubmitted(true);
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSubmitted(false);
+        setReportDescription("");
+        setReportReason("spam");
+      }, 1800);
+    } catch (err: any) {
+      setReportError(err?.response?.data?.error || "Couldn't submit the report. Please try again.");
+    } finally {
+      setReportSubmitting(false);
     }
   };
 
@@ -84,6 +119,13 @@ export default function JobDetails() {
           <button onClick={() => navigate("/jobs")} className="hover:text-white transition">Find Jobs</button>
           <ChevronRight size={14} />
           <span className="text-white truncate max-w-xs">{job.title}</span>
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="ml-4 flex items-center gap-1.5 text-gray-400 hover:text-red-400 transition"
+            title="Report this job"
+          >
+            <Flag size={14} /> Report
+          </button>
         </div>
       </header>
 
@@ -183,6 +225,74 @@ export default function JobDetails() {
           </button>
         </div>
       </div>
+
+      {/* Report job modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            {reportSubmitted ? (
+              <div className="text-center py-6">
+                <CheckCircle size={36} className="text-green-500 mx-auto mb-3" />
+                <h3 className="font-semibold text-gray-900">Report submitted</h3>
+                <p className="text-sm text-gray-500 mt-1">Our admin team will review it shortly.</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                    <Flag size={16} className="text-red-600" /> Report this job
+                  </h3>
+                  <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Reason</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white"
+                >
+                  {REPORT_REASONS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+
+                <label className="text-xs font-medium text-gray-500 mb-1.5 block">
+                  Additional details <span className="text-gray-400">(optional)</span>
+                </label>
+                <textarea
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Tell us what looks off about this posting…"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
+                />
+
+                {reportError && (
+                  <p className="text-sm text-red-600 mb-3">{reportError}</p>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitReport}
+                    disabled={reportSubmitting}
+                    className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition disabled:opacity-60"
+                  >
+                    {reportSubmitting ? "Submitting…" : "Submit Report"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
